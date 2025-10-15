@@ -24,10 +24,14 @@ class Core:
         self.port_service_map = PORT_SERVICE_MAP
     def insert_ip_from_directory(self,current_path, parent_ip=None):
         for entry in os.listdir(current_path):
+            ip = re.search(r'\s+([\d\.]+)', entry).group(1)
+            if not(ip):
+                continue # not founded any ip !
             full_path = os.path.join(current_path, entry)
+            
             if os.path.isdir(full_path):
-                self.crud.insert_ip(entry,full_path, dao=self.crud.dao)
-                self.insert_ip_tree(full_path, entry)
+                self.crud.insert_ip(entry,full_path,None, dao=self.crud.dao)
+                self.insert_ip_from_directory(full_path, entry)
     def insert_services_from_directory(self,current_path, ip):
         for entry in os.listdir(current_path):
             full_path = os.path.join(current_path, entry)
@@ -41,6 +45,11 @@ class Core:
                 if port:
                     self.crud.insert_port_node(ip, port, dao=self.crud.dao)
                 self.insert_services_from_directory(full_path, ip)
+    def insert_ip_from_nmap(self,ip_ports):
+        for ip, ports in ip_ports.items():
+            self.crud.insert_ip(ip, os.getcwd(), '', dao=self.crud.dao)
+            for port in ports:
+                self.crud.insert_port_node(ip, port, dao=self.crud.dao)
     def parse_greppable_nmap(self,file_path):
         ip_ports = defaultdict(list)
 
@@ -71,7 +80,7 @@ def main():
     dao = GenericDAO()
     crud = CRUD_GATHERINGDB(dao)
     core = Core(crud,PORT_SERVICE_MAP)
-    core.insert_ip_tree(os.getcwd())
+    core.insert_ip_from_directory(os.getcwd())
     ip_ports = core.parse_greppable_nmap('nmap_scan.gnmap')
 
 if __name__ == '__main__':
