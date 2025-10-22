@@ -12,7 +12,8 @@ class IPFrame(Frame):
 
         layout = Layout([1])
         self.add_layout(layout)
-        layout.add_widget(Label("Selecciona una IP (O para ver protocolos, I para submenu)"))
+        self.msj = Label("Selecciona una IP (O para ver protocolos, I para submenu)")
+        layout.add_widget(self.msj)
         layout.add_widget(Divider())
         layout_body = Layout([1, 1])
         self.add_layout(layout_body)
@@ -88,13 +89,17 @@ class IPFrame(Frame):
                     self.protocol_list.options = [(protocol, i) for i, protocol in enumerate(protocols)]
                 else:
                     self.protocol_list.options = []
+            elif event.key_code in [ord('r'), ord('R')]:
+                # reload data from the directory
+                self.msj.text = "[+] Reloading from directory..."
+                self.msj.update(self.screen)
+                self.model.cmd.commands.reload_from_directory()
             elif event.key_code in [ord('I'), ord('i')]:
                 raise NextScene("protocols")
             elif event.key_code in [ord('Q'), ord('q')]:
                 raise StopApplication("Exit")
-            elif event.key_code == [ord('r'), ord('R')]:
-                # reload data from the directory
-                self.model.cmd.reload_from_directory()
+
+                
             elif event.key_code in [ord('S'),ord('s')]:
                 raise NextScene("search")
         return super(IPFrame, self).process_event(event)

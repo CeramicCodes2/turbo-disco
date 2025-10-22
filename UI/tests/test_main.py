@@ -1,5 +1,5 @@
 from UI.ui import demo
-from models import UIMapper,GenericModel,RepositoryModel
+from UI.models import UIMapper,GenericModel,RepositoryModel
 from asciimatics.screen import Screen
 # Datos simulados
 ip_data = [
