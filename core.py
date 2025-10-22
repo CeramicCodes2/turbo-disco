@@ -31,14 +31,34 @@ class Core:
         return self.crud.select_all_ports(dao=self.crud.dao)
     def insert_ip_from_directory(self,current_path, parent_ip=None):
         for entry in os.listdir(current_path):
-            ip = re.search(r'\s+([\d\.]+)', entry)
-            if not(ip):
-                continue # not founded any ip !
-            ip = ip.group(1)
+            # buscar un posible IPv4 en el nombre (p. ej. "192.168.15.1" o "host-192.168.1.5")
+            m = re.search(r'(\d{1,3}(?:\.\d{1,3}){3})', entry)
+            log.info(f'DEBUG ENTRY: {entry} IP match: {m.group(1) if m else None}')
+            if not m:
+                continue  # no se encontró IP en el nombre
+            ip = m.group(1)
+            # validar rangos de octetos 0-255
+            try:
+                octets = [int(o) for o in ip.split('.')]
+            except ValueError:
+                log.info(f'Invalid IP format in entry: {entry} -> {ip}')
+                continue
+            if any(o < 0 or o > 255 for o in octets):
+                log.info(f'IP octet out of range in entry: {entry} -> {ip}')
+                continue
+
             full_path = os.path.join(current_path, entry)
-            
+
             if os.path.isdir(full_path):
-                self.crud.insert_ip(entry,full_path,None, dao=self.crud.dao)
+                log.info(f'[+] Inserting IP from directory: {ip} at path: {full_path}')
+                # mantener semántica actual: si check_already_inserted_ip devuelve False -> continuar (ya registrada)
+                if self.check_already_inserted_ip(ip):
+                    continue
+                try:
+                    self.crud.insert_ip(entry, full_path, None, dao=self.crud.dao)
+                except IntegrityError:
+                    log.info(f'IP {ip} already exists (integrity), skipping insert')
+                # recorrer subdirectorios
                 self.insert_ip_from_directory(full_path, entry)
     def insert_services_from_directory(self,current_path, ip):
         for entry in os.listdir(current_path):

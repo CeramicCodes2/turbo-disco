@@ -92,6 +92,9 @@ class IPFrame(Frame):
                 raise NextScene("protocols")
             elif event.key_code in [ord('Q'), ord('q')]:
                 raise StopApplication("Exit")
+            elif event.key_code == [ord('r'), ord('R')]:
+                # reload data from the directory
+                self.model.cmd.reload_from_directory()
             elif event.key_code in [ord('S'),ord('s')]:
                 raise NextScene("search")
         return super(IPFrame, self).process_event(event)

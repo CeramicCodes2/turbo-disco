@@ -1,30 +1,56 @@
+import argparse
 import os
-from core import Core,PORT_SERVICE_MAP,CRUD_GATHERINGDB,GenericDAO
+from GATHERINGDB.dao import GenericDAO
+from GATHERINGDB.main import CRUD_GATHERINGDB
 from GATHERINGDB.init_db import DatabaseInitializer
-from UI.ui import run_ui,GenericModel,UIMapper
-class Commands:
-    def __init__(self,core:Core=None):
-        self.core = core
-    def check_db_created(self):
-        DatabaseInitializer.check_db_created(self.core,self.core.crud.dao)
-    def import_from_nmap_scan(self):
-        ip_ports = self.core.parse_greppable_nmap('nmap_scan.gnmap')
-        self.core.create_ip_directories(ip_ports,base_dir=os.getcwd())
-        self.core.insert_ip_from_nmap(ip_ports=ip_ports)
-        # este mismo comando debe de implementar una logica
-        # para poder hacer un walk e ingresar dinamicamente a los directorios creados
-        # para si el pentester realizo un escaneo entonces ir ahi y re mapear las nuevas direcciones ip
-        
-def main():
+from UI.ui import run_ui
+from UI.models import GenericModel
+from core import Core, PORT_SERVICE_MAP
+from commands import Commands
+
+
+def build_core_stack():
     dao = GenericDAO()
     crud = CRUD_GATHERINGDB(dao)
-    core = Core(crud,PORT_SERVICE_MAP)
+    core = Core(crud, PORT_SERVICE_MAP)
     cmd = Commands(core)
-    generic = GenericModel(repository=core, commands=cmd) 
-    generic.cachered_ips
-    run_ui(generic)
-    cmd.check_db_created()
-    cmd.import_from_nmap_scan()
+    generic = GenericModel(repository=core, commands=cmd)
+    return dao, crud, core, cmd, generic
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description='Launcher for the HTB workspace')
+    parser.add_argument('--ui', action='store_true', help='Run the asciimatics UI')
+    parser.add_argument('--init-db', action='store_true', help='Initialize the database (create tables)')
+    parser.add_argument('--import-from-nmap', action='store_true', help='Parse nmap_scan.gnmap (or file specified with --nmap-file) and import results')
+    parser.add_argument('--nmap-file', type=str, default='nmap_scan.gnmap', help='Path to greppable nmap file')
+    parser.add_argument('--reload-from-directory', action='store_true', help='Reload IPs from the current directory')
+
+    args = parser.parse_args(argv)
+
+    dao, crud, core, cmd, generic = build_core_stack()
+
+    # initialize DB explicitly
+    if args.init_db:
+        DatabaseInitializer.initialize_db(dao=dao)
+        print('[*] Database initialized')
+
+    # import from nmap file
+    if args.import_from_nmap:
+        cmd.import_from_nmap_scan_file(args.nmap_file)
+        print(f'[*] import_from_nmap_scan completed (file={args.nmap_file})')
+
+    # reload from directory
+    if args.reload_from_directory:
+        cmd.reload_from_directory()
+        print('[*] reload_from_directory completed')
+
+    # run UI if requested
+    if args.ui:
+        # make sure cached data is populated before UI
+        _ = generic.cachered_ips
+        run_ui(generic)
+
 
 if __name__ == '__main__':
     main()
