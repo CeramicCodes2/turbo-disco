@@ -1,12 +1,19 @@
 from dataclasses import dataclass
 import sqlite3
-
+class IntegrityError(Exception):
+    def __init__(self, datatype: str, *args):
+        super().__init__("Integrity error on table {datatype}".format(datatype=datatype), *args)
+        
 class TransitiveTable:
     @classmethod
     def create_table(cls) -> str:
         ...
 
 class BaseEntity:
+
+    @classmethod
+    def select_map(cls):
+        return {}
     @classmethod
     def insert(cls):
         ...
@@ -32,9 +39,13 @@ class BaseEntity:
         # returns the SQL statement to select all records from the table
         raise NotImplementedError("Subclasses must implement select method")
     @classmethod
-    def selectById(cls,id:int) -> str:
+    def selectById(cls) -> str:
         # returns the SQL statement to select a record by its unique identifier
         raise NotImplementedError("Subclasses must implement selectById method")
+    @classmethod
+    def selectCoincidence(cls) -> str:
+        # returns the SQL statement to select records by a field and value
+        raise NotImplementedError("Subclasses must implement selectCoincidence method")
 @dataclass
 class IPNode(BaseEntity):
     id: int
@@ -60,8 +71,24 @@ class IPNode(BaseEntity):
         
         return "SELECT id, ip, path, parent_ip FROM ip_node"
     @classmethod
-    def selectById(cls,id:int):
+    def selectById(cls):
         return "SELECT id, ip, path, parent_ip FROM ip_node WHERE id=?"
+    @classmethod
+    def select_map(cls):
+        sm = {
+            "ip":"SELECT id, ip, path, parent_ip FROM ip_node WHERE  ip = ?",
+            "id":"SELECT id, ip, path, parent_ip FROM ip_node WHERE  id = ?"
+        }
+        return sm
+    @classmethod
+    def selectCoincidence(cls,field):
+        # select map realmente solo son consultas especificas por campo para evitar tener que 
+        # crear una consulta que se altere en tiempo de ejecucion que es riesgoso
+        sm = cls.select_map().get(field,None)
+        if not sm:
+            raise ValueError(f"No se definio una consulta de tipo {field} en {cls.__name__} ")
+        return sm
+
     
     @classmethod
     def create_table(cls):
@@ -70,8 +97,7 @@ class IPNode(BaseEntity):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ip TEXT NOT NULL,
                 path TEXT NOT NULL,
-                parent_ip TEXT,
-                UNIQUE(ip)
+                parent_ip TEXT
             )
         '''
     
@@ -97,6 +123,12 @@ class Ports(BaseEntity):
     @classmethod
     def select(cls):
         return f"SELECT id, port, service_name, ip FROM ports"
+    @classmethod
+    def selectById(cls):
+        return f"SELECT id, port, service_name, ip FROM ports WHERE id=?"
+    @classmethod
+    def selectCoincidence(cls):
+        return f"SELECT id, port, service_name, ip FROM ports WHERE  =?"
     def exportAsTupple(self):
         return (self.port,self.service_name,self.ip)    
     def create_table():

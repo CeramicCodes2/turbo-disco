@@ -1,11 +1,12 @@
 import sqlite3
-from GATHERINGDB.model import IPNode
+from GATHERINGDB.model import IPNode,IntegrityError 
 from GATHERINGDB.connection import SQLiteConnectionPool
 from GATHERINGDB.log import log
 from GATHERINGDB.model import BaseEntity,IPNode
 from typing import TypeVar, Generic, List
 
 T = TypeVar('T')  # T puede ser cualquier tipo
+
 
 class Transaction:
     def __init__(self, connection: SQLiteConnectionPool,poolToAsk:SQLiteConnectionPool):
@@ -72,18 +73,22 @@ class GenericDAO:
                     regis = [ data(*reg) if reg else None for reg in cursor.fetchmany(top_results)]
                 else:
                     regis = [ data(*reg) if reg else None for reg in cursor.fetchall()]
-                return regis
+                return regis  
     @classmethod
     def seleccionarPorId(cls,data:T,id:int) -> T:
         with cls.conn() as conection:
             with Transaction(conection,cls.conn) as cursor:
                 valores = (id,)
-                cursor.execute(data.selectById(id),valores)
+                query = getattr(data,'selectById',None)
+                sql = query()
+                if not(callable(query)):
+                    raise ValueError(f"El modelo {data} no tiene un método selectById()")
+                cursor.execute(sql,valores)
                 reg = cursor.fetchone()
                 if not reg:
                     return None
                 return data(*reg)
-        
+
     @classmethod
     def insertar(cls,data:T) -> int:
         ''' se necesita una transaccion por lo que usamos un width conexion '''
@@ -95,23 +100,28 @@ class GenericDAO:
                 if not(callable(query)):
                     raise ValueError(f"El modelo {data} no tiene un método insert()")
                 sql = query()
-                cursor.execute(sql, valores)
+                try:
+                    cursor.execute(sql, valores)
+                except sqlite3.IntegrityError as e:
+                    log.error(f"Error de integridad al insertar {data}: {e}")
+                    raise IntegrityError(type(data).__name__) from e
                 cmps = cursor.rowcount
         return cmps
     @classmethod
-    def actualizar(cls,data:T) -> int:
+    def actualizar(cls,data:T,id:int) -> int:
         ''' retorna las filas afectadas '''
         # hacemos una transaccion por lo tanto debemos de abrir la conexion con width
-        pool = cls.conn()
-        with Transaction(pool,cls.conn) as cursor:
-            values = data.exportAsTupple()
-            # el modelo define update() que devuelve la query
-            query = getattr(data, 'update', None)
-            sql = query()
-            if not callable(query):
-                raise ValueError(f"El modelo {data} no tiene un método update()")
-            cursor.execute(sql, values)
-            count = cursor.rowcount
+        with cls.conn() as connection:
+            with Transaction(connection,cls.conn) as cursor:
+                values = [x for x in data.exportAsTupple()]
+                values.append(id)# id should be appened at the end
+                # el modelo define update() que devuelve la query
+                query = getattr(data, 'update', None)
+                sql = query()
+                if not callable(query):
+                    raise ValueError(f"El modelo {data} no tiene un método update()")
+                cursor.execute(sql, values)
+                count = cursor.rowcount
         return count
     @classmethod
     def eliminar(cls,data:T,id:int) -> int:
@@ -128,3 +138,15 @@ class GenericDAO:
                 log.warn(f"Eliminando registro con id {id} usando {sql} y valores {valores}")
                 rs = cursor.rowcount
         return rs
+    @classmethod
+    def seleccionarCoincidencia(cls,data:T,field:str,value:str) -> list[T]:
+        with cls.conn() as connection:
+            with Transaction(connection,cls.conn) as cursor:
+                sql = getattr(data, 'selectCoincidence', None)
+                sql = sql(field)
+                if not sql:
+                    raise ValueError(f"El modelo {data} no tiene un método selectCoincidence()")
+                valores = (value,)
+                cursor.execute(sql,valores)
+                regis = [ data(*reg) if reg else None for reg in cursor.fetchall()]
+                return regis

@@ -8,7 +8,14 @@ from GATHERINGDB.log import log
 
 class CRUD_GATHERINGDB:
     def __init__(self, dao:GenericDAO=None):
-        self.dao = dao       
+        self.dao = dao     
+    def select_ip_by_field(self,field:str,value:str,dao:GenericDAO=None) -> list[IPNode]:
+        try:
+            nodes = dao.seleccionarCoincidencia(IPNode,field,value)
+            return nodes
+        except Exception as e:
+            log.error(f"[-] error selecting nodes by field \n {e}")
+            return []  
     def insert_port_node(self,ip_id,ports,dao:GenericDAO=None):
         try:
             data =dao.seleccionarPorId(IPNode,ip_id)
@@ -17,7 +24,7 @@ class CRUD_GATHERINGDB:
             ports = Ports(id=0,port=ports,service_name='unknown',ip=data.ip)
             dao.insertar(ports)
         except Exception as e:
-            print(f"[-] error inserting node \n {e}")
+            log.error(f"[-] error inserting node \n {e}")
     def insert_ip(self,ip:str,current_path:str,parent_ip:str, dao:GenericDAO=None):
         node = IPNode(id=0,ip=ip, parent_ip=parent_ip,path=current_path)
         dao.insertar(node)
@@ -25,6 +32,14 @@ class CRUD_GATHERINGDB:
         nodes = dao.seleccionar(data)
         for node in nodes:
             print(node)
+        return len(nodes)
+    def select_all_ips(self,dao:GenericDAO=None) -> list[IPNode]:
+        return dao.seleccionar(IPNode)
+    def select_all_ports(self,dao:GenericDAO=None) -> list[Ports]:
+        return dao.seleccionar(Ports)
+    def select(self,data,dao:GenericDAO=None):
+        nodes = dao.seleccionar(data)
+        return nodes
     def delete_ip(self,ip_id:int,dao:GenericDAO=None):
         try:
             data =dao.seleccionarPorId(IPNode,ip_id)
@@ -32,28 +47,37 @@ class CRUD_GATHERINGDB:
                 raise ValueError(f"No IPNode found with id {ip_id}")
             dao.eliminar(data,data.id)
         except Exception as e:
-            print(f"[-] error deleting node \n {e}")
-    def update_ip(self,ip_id:int,new_ip:str,new_path:str,dao:GenericDAO=None):
+            log.error(f"[-] error deleting node \n {e}")
+    def update_ip(self,ip_id:int,new_ip:IPNode,dao:GenericDAO=None):
         try:
             data =dao.seleccionarPorId(IPNode,ip_id)
             if not data:
                 raise ValueError(f"No IPNode found with id {ip_id}")
-            data.ip = new_ip
-            data.path = new_path
-            dao.actualizar(data)
+            dao.actualizar(new_ip,new_ip.id)
         except Exception as e:
-            print(f"[-] error updating node \n {e}")
+            log.error(f"[-] error updating node \n {e}")
 
 
 def main():
     dao = GenericDAO()
     crud = CRUD_GATHERINGDB(dao)
-    crud.show_all_data(IPNode,dao=dao)
-    crud.show_all_data(Ports,dao=dao)
-    #crud.insert_ip('192.168.2.1',os.getcwd(),'', dao=dao)
-    #crud.insert_ip('192.168.2.5',os.getcwd(),'', dao=dao)
+    ln_ip = crud.show_all_data(IPNode,dao=dao)
+    ln = crud.show_all_data(Ports,dao=dao)
+    
+    for x in crud.select(IPNode,dao=dao):
+        print(x.id)
+        crud.delete_ip(x.id, dao=dao)
+    
+    crud.insert_ip('192.168.2.1',os.getcwd(),'', dao=dao)
+    crud.insert_ip('192.168.2.5',os.getcwd(),'', dao=dao)
     #crud.insert_port_node(1, 8080, dao=dao)
-    crud.delete_ip(1, dao=dao)
+    crud.show_all_data(IPNode,dao=dao)
+    up:IPNode = crud.select_ip_by_field('ip', '192.168.2.1', dao=dao)[0]
+    
+    up.parent_ip = '192.168.20.2'
+    print(up)
+    crud.update_ip(up.id,up,dao=dao)
+    
 
 if __name__ == '__main__':
     DatabaseInitializer.initialize_db(dao=GenericDAO())
@@ -62,5 +86,3 @@ if __name__ == '__main__':
 # posible feature
 # agregar un generador de nombres aleatorios para las direcciones IP y estos nombres pasarlos
 # a una funcion que genere vareables de entorno para que se pueda facilmente se;alar la direccion IP 
-
-    
