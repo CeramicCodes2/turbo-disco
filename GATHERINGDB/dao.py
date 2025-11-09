@@ -63,7 +63,7 @@ class GenericDAO:
         ...
     
     @classmethod
-    def seleccionar(cls,data:BaseEntity,top_results = 5) -> list[T]:
+    def seleccionar(cls,data:BaseEntity,top_results:int = None) -> list[T]:
         # permite pasar una transacción opcional en el futuro; por ahora abrimos
         # una transacción temporal para lectura
         with cls.conn() as connection:

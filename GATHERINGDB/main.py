@@ -8,20 +8,33 @@ from GATHERINGDB.log import log
 
 class CRUD_GATHERINGDB:
     def __init__(self, dao:GenericDAO=None):
-        self.dao = dao     
+        self.dao = dao
+    def check_field_n_value(self,field:str,value:str):
+        if not(isinstance(field,str) and isinstance(value,str)):
+            raise ValueError("Field and value must be strings")
     def select_ip_by_field(self,field:str,value:str,dao:GenericDAO=None) -> list[IPNode]:
+        self.check_field_n_value(field,value)
+            
         try:
             nodes = dao.seleccionarCoincidencia(IPNode,field,value)
             return nodes
         except Exception as e:
             log.error(f"[-] error selecting nodes by field \n {e}")
             return []  
-    def insert_port_node(self,ip_id,ports,dao:GenericDAO=None):
+    def select_port_by_field(self,field:str,value:str,dao:GenericDAO=None) -> list[Ports]:
+        self.check_field_n_value(field,value)
+        try:
+            node = dao.seleccionarCoincidencia(Ports,field,value)
+            return node
+        except Exception as e:
+            log.error(f"[-] error selecting nodes by field \n {e}")
+            return []
+    def insert_port_node(self,ip_id,ports,service_name='unknown',dao:GenericDAO=None):
         try:
             data =dao.seleccionarPorId(IPNode,ip_id)
             if not data:
                 raise ValueError(f"No IPNode found with id {ip_id}")
-            ports = Ports(id=0,port=ports,service_name='unknown',ip=data.ip)
+            ports = Ports(id=0,port=ports,service_name=service_name,ip=data.ip)
             dao.insertar(ports)
         except Exception as e:
             log.error(f"[-] error inserting node \n {e}")

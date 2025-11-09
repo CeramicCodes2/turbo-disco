@@ -9,6 +9,8 @@ datos local para consultarlas y actualizarlas fácilmente.
     * insertar
         * custom errors
 
+    * resolver bug de que cache no almacena direciones ip que no se hayan cargado desde nmap
+    
 ---
 
 # DONE

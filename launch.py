@@ -47,8 +47,15 @@ def main(argv=None):
 
     # run UI if requested
     if args.ui:
+        
         # make sure cached data is populated before UI
         _ = generic.cachered_ips
+        #print(generic.mapper.value)
+        #print(generic.mapper.value)
+        
+        if generic.mapper.value == []:
+            print("[!] No data available to display in UI. Please import data first. using --import-from-nmap or --reload-from-directory")
+            exit(1)
         run_ui(generic)
 
 

@@ -23,4 +23,5 @@ class Commands:
     def reload_from_directory(self):
         # implementar logica para recargar desde el directorio actual
         self.core.insert_ip_from_directory(os.getcwd())
-        
+        for directory,ip in self.core.detect_ip_directories(base_dir=os.getcwd()):
+            self.core.insert_services_from_directory(directory,ip)

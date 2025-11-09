@@ -127,8 +127,20 @@ class Ports(BaseEntity):
     def selectById(cls):
         return f"SELECT id, port, service_name, ip FROM ports WHERE id=?"
     @classmethod
-    def selectCoincidence(cls):
-        return f"SELECT id, port, service_name, ip FROM ports WHERE  =?"
+    def select_map(cls):
+        sm = {
+            "ip":"SELECT id, port, service_name,ip parent_ip FROM ports WHERE  ip = ?",
+            "id":"SELECT id, port, service_name,ip FROM ports WHERE  id = ?"
+        }
+        return sm
+    @classmethod
+    def selectCoincidence(cls,field):
+        # select map realmente solo son consultas especificas por campo para evitar tener que 
+        # crear una consulta que se altere en tiempo de ejecucion que es riesgoso
+        sm = cls.select_map().get(field,None)
+        if not sm:
+            raise ValueError(f"No se definio una consulta de tipo {field} en {cls.__name__} ")
+        return sm
     def exportAsTupple(self):
         return (self.port,self.service_name,self.ip)    
     def create_table():
