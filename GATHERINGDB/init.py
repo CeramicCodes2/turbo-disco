@@ -17,6 +17,7 @@ class IPNode:
     ip: str
     path:str
     parent_ip: str = None
+    child_level: int = 0
 
 import sqlite3
 from model import IPNode
@@ -29,18 +30,19 @@ class IPNodeDAO:
 
     def _create_table(self):
         self.cursor.execute('''
-            CREATE TABLE IF NOT EXISTS ip_nodes (
+            CREATE TABLE IF NOT EXISTS ip_node (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ip TEXT NOT NULL,
                 path TEXT NOT NULL,
-                parent_ip TEXT
+                parent_ip TEXT,
+                child_level INTEGER DEFAULT 0
             )
         ''')
 
     def insert_node(self, node: IPNode):
         self.cursor.execute(
-            'INSERT INTO ip_nodes (ip, path,parent_ip) VALUES (?, ? ,?)',
-            (node.ip, node.path,node.parent_ip)
+            'INSERT INTO ip_nodes (ip, path,parent_ip,child_level) VALUES (?, ? ,?,?)',
+            (node.ip, node.path,node.parent_ip,node.child_level)
         )
 
     def commit(self):

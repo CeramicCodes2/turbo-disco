@@ -1,4 +1,5 @@
 import os
+from typing import Generator
 from GATHERINGDB.dao import GenericDAO,Transaction
 from GATHERINGDB.model import IPNode,Ports
 from GATHERINGDB.init_db import DatabaseInitializer
@@ -38,8 +39,8 @@ class CRUD_GATHERINGDB:
             dao.insertar(ports)
         except Exception as e:
             log.error(f"[-] error inserting node \n {e}")
-    def insert_ip(self,ip:str,current_path:str,parent_ip:str, dao:GenericDAO=None):
-        node = IPNode(id=0,ip=ip, parent_ip=parent_ip,path=current_path)
+    def insert_ip(self,ip:str,current_path:str,parent_ip:str,child_level:int=0,dao:GenericDAO=None):
+        node = IPNode(id=0,ip=ip, parent_ip=parent_ip,child_level=child_level,path=current_path)
         dao.insertar(node)
     def show_all_data(self,data,dao:GenericDAO=None):
         nodes = dao.seleccionar(data)
@@ -48,6 +49,17 @@ class CRUD_GATHERINGDB:
         return len(nodes)
     def select_all_ips(self,dao:GenericDAO=None) -> list[IPNode]:
         return dao.seleccionar(IPNode)
+    def select_depth_ips(self,depth:int,dao:GenericDAO=None) -> list[IPNode]:
+        return dao.seleccionarCoincidencia(IPNode,'child_level',depth)
+    def select_ip_parents(self,parent_ip:str,depth:int,dao:GenericDAO=None) -> Generator[list[IPNode],None,None]:
+        max_level_nodes = dao.seleccionarCoincidencia(IPNode,'max_child_level_by_parent',parent_ip)
+        if not max_level_nodes:
+            return []
+        if depth > max_level_nodes[0].max_level:
+            depth = max_level_nodes[0].max_level
+        for level in range(0,depth+1):
+            yield dao.seleccionarCoincidencia(IPNode,'child_level',level)
+
     def select_all_ports(self,dao:GenericDAO=None) -> list[Ports]:
         return dao.seleccionar(Ports)
     def select(self,data,dao:GenericDAO=None):

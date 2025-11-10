@@ -52,12 +52,13 @@ class IPNode(BaseEntity):
     ip: str
     path:str
     parent_ip: str = None
+    child_level:int = 0
     @classmethod
     def get_guid():
         return 'ip'
     @classmethod
     def insert(cls):
-        return f"INSERT INTO ip_node(ip,path,parent_ip) VALUES (?,?,?)"
+        return f"INSERT INTO ip_node(ip,path,parent_ip,child_level) VALUES (?,?,?,?)"
     @classmethod
     def update(cls):
         return f"UPDATE ip_node SET ip=?, path=?, parent_ip=? WHERE ip=?"
@@ -65,7 +66,7 @@ class IPNode(BaseEntity):
     def delete(cls):
         return f"DELETE FROM ip_node WHERE id=?"
     def exportAsTupple(self):
-        return (self.ip,self.path,self.parent_ip)
+        return (self.ip,self.path,self.parent_ip,self.child_level)
     @classmethod
     def select(cls):
         
@@ -77,7 +78,10 @@ class IPNode(BaseEntity):
     def select_map(cls):
         sm = {
             "ip":"SELECT id, ip, path, parent_ip FROM ip_node WHERE  ip = ?",
-            "id":"SELECT id, ip, path, parent_ip FROM ip_node WHERE  id = ?"
+            "id":"SELECT id, ip, path, parent_ip FROM ip_node WHERE  id = ?",
+            "parent_ip":"SELECT id, ip, path, parent_ip FROM ip_node WHERE  parent_ip = ?",
+            "child_level":"SELECT id, ip, path, parent_ip FROM ip_node WHERE  child_level = ?",
+            "max_child_level_by_parent":"SELECT MAX(child_level) as max_level FROM ip_node where parent_ip = ?"
         }
         return sm
     @classmethod
@@ -97,7 +101,8 @@ class IPNode(BaseEntity):
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ip TEXT NOT NULL,
                 path TEXT NOT NULL,
-                parent_ip TEXT
+                parent_ip TEXT,
+                child_level INTEGER DEFAULT 0
             )
         '''
     

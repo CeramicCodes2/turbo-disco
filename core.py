@@ -73,38 +73,53 @@ class Core:
                 if m:
                     ip_dirs.append(( full_path,entry))
         return ip_dirs
-    def insert_ip_from_directory(self,current_path, parent_ip=None):
+    def insert_ip_from_directory(self,current_path, parent_ip=None,level = 0):
+        if not os.path.exists(current_path):
+            return
+
         for entry in os.listdir(current_path):
+            full_path = os.path.join(current_path, entry)
+            if not os.path.isdir(full_path):
+                continue
+
             # buscar un posible IPv4 en el nombre (p. ej. "192.168.15.1" o "host-192.168.1.5")
             m = re.search(r'(\d{1,3}(?:\.\d{1,3}){3})', entry)
             log.info(f'DEBUG ENTRY: {entry} IP match: {m.group(1) if m else None}')
-            if not m:
-                continue  # no se encontró IP en el nombre
-            ip = m.group(1)
-            # validar rangos de octetos 0-255
-            try:
-                octets = [int(o) for o in ip.split('.')]
-            except ValueError:
-                log.info(f'Invalid IP format in entry: {entry} -> {ip}')
-                continue
-            if any(o < 0 or o > 255 for o in octets):
-                log.info(f'IP octet out of range in entry: {entry} -> {ip}')
-                continue
 
-            full_path = os.path.join(current_path, entry)
-
-            if os.path.isdir(full_path):
-                log.info(f'[+] Inserting IP from directory: {ip} at path: {full_path}')
-                # mantener semántica actual: si check_already_inserted_ip devuelve False -> continuar (ya registrada)
-                if self.check_already_inserted_ip(ip):
-                    continue
+            if m:
+                ip = m.group(1)
+                # validar rangos de octetos 0-255
                 try:
-                    self.crud.insert_ip(entry, full_path, None, dao=self.crud.dao)
-                except IntegrityError:
-                    log.info(f'IP {ip} already exists (integrity), skipping insert')
-                # recorrer subdirectorios
+                    octets = [int(o) for o in ip.split('.')]
+                except ValueError:
+                    log.info(f'Invalid IP format in entry: {entry} -> {ip}')
+                    # aún descendemos para buscar IPs más adentro
+                    parent_ip = ip
+                    self.insert_ip_from_directory(full_path, parent_ip, level + 1)
+                    continue
+
+                if any(o < 0 or o > 255 for o in octets):
+                    log.info(f'IP octet out of range in entry: {entry} -> {ip}')
+                    # aún descendemos para buscar IPs más adentro
+                    parent_ip = ip
+                    self.insert_ip_from_directory(full_path, parent_ip, level + 1)
+                    continue
+
+                log.info(f'[+] Inserting IP from directory: {ip} at path: {full_path}')
+                if not self.check_already_inserted_ip(ip):
+                    try:
+                        self.crud.insert_ip(entry, full_path, parent_ip, level, dao=self.crud.dao)
+                    except IntegrityError:
+                        log.info(f'IP {ip} already exists (integrity), skipping insert')
+
+                # recorrer servicios dentro de este directorio IP
                 self.insert_services_from_directory(full_path, ip)
-                #log.info(f'[+] scanning {full_path}')
+            else:
+                log.debug(f'No IP in dir name: {entry}, descendiendo para buscar en su interior')
+
+            # Siempre descendemos en subdirectorios para detectar IPs hijas aunque el nombre
+            # del subdirectorio actual no contenga una IP directamente.
+            self.insert_ip_from_directory(full_path, parent_ip if m is None else ip, level + 1)
     def resolve_service_name(self,service_name:str) -> str|int:
         """
             si no resuelve el nombre del servicio retorna el puerto para que no se pierdan los datos
