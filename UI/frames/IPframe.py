@@ -20,14 +20,14 @@ class IPFrame(Frame):
 
         self.ip_list = ListBox(
             height=4,
-            options=[(ip,idx) for idx,ip in enumerate(self.split_ip([ip for ip, _, _ in self.model.cachered_ips]))],
+            options=[(ip,idx) for idx,ip in enumerate(self.split_ip([ip for ip, _, _, child_level in self.model.cachered_ips if child_level == 0]))],
             name="ip_list",
             add_scroll_bar=True,
             on_change=self._on_select
         )
         self.parent_list = ListBox(
             height=4,
-            options=[(parent, idx) for idx, (_, parent, _) in enumerate(self.model.cachered_ips)],
+            options=[(parent, idx) for idx, (_, parent, _, child_level) in enumerate(self.model.cachered_ips) if child_level > 0],
             name="parent_list",
             add_scroll_bar=True,
             on_change=self._on_select
@@ -42,6 +42,13 @@ class IPFrame(Frame):
             add_scroll_bar=True
         )
         layout_body.add_widget(self.protocol_list)
+        self.child_list = ListBox(
+            height=6,
+            options=[],
+            name="child_list",
+            add_scroll_bar=True
+        )
+        layout_body.add_widget(self.child_list)
         self.protocol_list.disabled = True
         self.protocols_visible = False
         self.fix()
@@ -82,12 +89,13 @@ class IPFrame(Frame):
         #self.ip_list.value = f"* {self.ip_list.value}" 
         if self.protocols_visible:
             protocols = ()
-            for ip,_,protocols in self.model.cachered_ips:
+            for ip,_,protocols,_ in self.model.cachered_ips:
                 if ip == self.ip_list.options[self.selected_index][0]:
                     protocols = protocols
                     break
             self.protocol_list.options = [(protocol, i) for i, protocol in enumerate(protocols)]
     def on_parent_ip_selected(self):
+        """
         self.protocol_list.options = []# reseteamos
         self.selected_index = self.parent_list.value
         if self.protocols_visible:
@@ -97,6 +105,21 @@ class IPFrame(Frame):
             #_, _, protocols = parent_ips.index(self.parent_list.value)
             self.protocol_list.options = [('nimpl',1)]
             #self.protocol_list.options = [(protocol, i) for i, protocol in enumerate(protocols)]
+        """
+        # Llenar child_list con todas las IP hijas del padre seleccionado
+        self.selected_index = self.parent_list.value
+        self.protocol_list.options = []  # reset
+        if self.selected_index is None:
+            self.child_list.options = []
+            return
+        # Buscar en el modelo las IPs hijas del padre seleccionado
+        parent_entry = self.model.cachered_ips[self.selected_index]
+        parent_ip = parent_entry[1]
+        # asumir que parent_entry[2] puede contener protocolos o lista de hijas según modelo;
+        # aquí llenamos child_list con las IPs hijas encontradas en el repositorio
+        child_ips = [ip for ip, p, _, child_level in self.model.cachered_ips if p == parent_ip]
+        # mostrar cada hija con índice
+        self.child_list.options = [(child_ip, i) for i, child_ip in enumerate(child_ips)]
     def get_focused_layout(self):
         focused_widget = self.focussed_widget
         for layout in self.layouts:
@@ -116,18 +139,18 @@ class IPFrame(Frame):
         self.msj.update(self.screen)
         self.model.cmd.commands.reload_from_directory()
         self.model.mapper.from_core(self.model.repo.repository)
-        self.ip_list.options = [(ip,idx) for idx,ip in enumerate(self.split_ip([ip for ip, _, _ in self.model.cachered_ips]))]
-        self.parent_list.options = [(parent, idx) for idx, (_, parent, _) in enumerate(self.model.cachered_ips)]
+        self.ip_list.options = [(ip,idx) for idx,ip in enumerate(self.split_ip([ip for ip, _, _,child_level in self.model.cachered_ips if child_level == 0]))]
+        self.parent_list.options = [(parent, idx) for idx, (_, parent, _,child_level) in enumerate(self.model.cachered_ips) if child_level > 0]
         self.msj.text = "[+] Reloaded. Select an IP (O to view protocols, I for submenu)"
         self.msj.update(self.screen)
-
+              
     def process_event(self, event):
         if isinstance(event, KeyboardEvent):
             if event.key_code in [ord('O'), ord('o')]:
                 self.model.cachered_ips
                 self.protocols_visible = not self.protocols_visible
                 if self.protocols_visible:
-                    _, _, protocols = self.model.cachered_ips[self.selected_index]
+                    _, _, protocols,child_level = self.model.cachered_ips[self.selected_index]
                     self.protocol_list.options = [(protocol, i) for i, protocol in enumerate(protocols)]
                           
                 else:

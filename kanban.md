@@ -34,13 +34,10 @@ pentesting reales.
 
 # PROCESS
 ---
-* Quiero que las IPs escaneadas se almacenen en una base de 
-datos local para consultarlas y actualizarlas fácilmente.
-    * buscar
-    * actualizar
-    * insertar
-        * custom errors
 
+* Quiero que se pueda modificar dinamicamente al pulsar + el nivel de profundidad a ir en el arbol de direcciones ip 
+
+* Quiero que se muestre en el TUI las direcciones IP hijas de una direccion ip padre 
 
 
 

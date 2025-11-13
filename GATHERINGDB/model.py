@@ -70,7 +70,7 @@ class IPNode(BaseEntity):
     @classmethod
     def select(cls):
         
-        return "SELECT id, ip, path, parent_ip FROM ip_node"
+        return "SELECT id, ip, path, parent_ip,child_level FROM ip_node"
     @classmethod
     def selectById(cls):
         return "SELECT id, ip, path, parent_ip FROM ip_node WHERE id=?"

@@ -64,15 +64,13 @@ class UIMapper:
         result = []
         for ip in ips or []:
             ip_str = getattr(ip, 'ip', None)
-            parent = getattr(ip, 'parent_ip', None)
+            parent = getattr(ip, 'parent_ip', '')
             path = getattr(ip, 'path', '')
+            child_level = getattr(ip, 'child_level', None)
             # fallback: algunos modelos usan 'path' para la carpeta
-            if parent is None:
-                parent = ''
-                # path = getattr(ip, 'path', None)
                 
             protocols = protocols_by_ip.get(ip_str, [])
-            result.append((ip_str, parent, protocols))#,path))
+            result.append((ip_str, parent, protocols,child_level))#,path))
 
         self._value = result
 
@@ -105,6 +103,7 @@ class GenericModel:
         self.cmd = CommandModel(commands)
         self.mapper = UIMapper(port_service_map=port_service_map)
         self._cachered = []
+        self._just_parents = []
         self.protocols = ["SMB", "FTP", "SSH", "HTTP", "DNS", "RDP", "Telnet", "SMTP", "POP3", "IMAP", "LDAP", "SNMP"]
 
     @property

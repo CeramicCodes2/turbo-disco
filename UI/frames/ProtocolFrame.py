@@ -10,7 +10,7 @@ class ProtocolFrame(Frame):
         super(ProtocolFrame, self).__init__(screen, 20, screen.width, has_border=True, name="Protocol Submenu")
         self.model = model
         self.ip_index = ip_index
-        ip, parent, protocols = self.model.cachered_ips[ip_index]
+        ip, parent, protocols,child_level = self.model.cachered_ips[ip_index]
         self.selection_item:int|None = None
         layout = Layout([1])
         self.add_layout(layout)
