@@ -4,10 +4,9 @@ from GATHERINGDB.dao import GenericDAO
 from GATHERINGDB.main import CRUD_GATHERINGDB
 from GATHERINGDB.init_db import DatabaseInitializer
 from UI.ui import run_ui
-from UI.models import GenericModel
+from UI.models import GenericModel,Themes
 from core import Core, PORT_SERVICE_MAP
 from commands import Commands
-
 
 def build_core_stack():
     dao = GenericDAO()

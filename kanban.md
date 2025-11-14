@@ -55,6 +55,8 @@ datos local para consultarlas y actualizarlas fácilmente.
         * 
     * resolver bug de que cache no almacena direciones ip que no se hayan cargado desde nmap
 
+* quiero que se pueda editar el nivel de profunidad a mostrar para cambiar dinamicamente entre direcciones ip hijas
+
 ---
 
 * Quiero que cada dirección IP escaneada se convierta 

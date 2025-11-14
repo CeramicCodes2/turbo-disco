@@ -4,12 +4,20 @@ from asciimatics.screen import Screen
 from asciimatics.event import KeyboardEvent
 from asciimatics.exceptions import StopApplication, NextScene
 from asciimatics.scene import Scene
+
 class IPFrame(Frame):
     def __init__(self, screen,model):
-        super(IPFrame, self).__init__(screen, 30, screen.width, has_border=True, name="IP Selector")
+        IPFrame.model = model
+        super(IPFrame, self).__init__(screen, 30, 
+                                      screen.width, 
+                                      has_border=True, 
+                                      name="IP Selector")
         self.selected_index = 0
         self.model = model
-
+        self.current_theme = model.current_theme
+        #self.palette = model.themes[model.current_theme]
+        #self.set_theme(self.current_theme)
+        self.set_theme(self.current_theme)
         layout = Layout([1])
         self.add_layout(layout)
         self.msj = Label("Selecciona una IP (O para ver protocolos, I para submenu)")
@@ -52,6 +60,19 @@ class IPFrame(Frame):
         self.protocol_list.disabled = True
         self.protocols_visible = False
         self.fix()
+    def set_theme(self, theme: str):
+        """
+        Pick a palette from the list of supported THEMES.
+
+        :param theme: The name of the theme to set.
+        """
+        
+        if theme in self.model.themes:
+            self._theme = theme
+            self.palette = self.model.themes[theme]
+            if self._border_mgr.can_scroll:
+                assert self._border_mgr.scroll_bar is not None
+                self._border_mgr.scroll_bar.palette = self.palette
     @staticmethod
     def Quickshort(req:list[int]):
         fin = []
@@ -168,3 +189,5 @@ class IPFrame(Frame):
             elif event.key_code in [ord('S'),ord('s')]:
                 raise NextScene("search")
         return super(IPFrame, self).process_event(event)
+
+        
