@@ -69,7 +69,7 @@ class TreeIPFrame(Frame):
         self.current_theme = theme
         self._tree_nodes = []  # lista de nodos del árbol (representación plana)
         self._expanded = set()  # set de índices expandidos
-        self._selected_idx = 0
+        self.__selected_idx = 0
         self._expand_depths = {}  # mapa parent_ip -> depth de expansión (0 = colapsado)
         self._visible_nodes = []  # lista paralela a tree_list.options con nodos visibles
         self.set_theme('bright')
@@ -148,7 +148,14 @@ class TreeIPFrame(Frame):
 
         self.fix()
         self._build_tree()
-
+    @property
+    def _selected_idx(self):
+        return self.__selected_idx
+    @_selected_idx.setter
+    def _selected_idx(self,arg:int):
+        self.__selected_idx = arg
+        self.model.selected_ip = self._visible_nodes[arg]['ip']
+    
     def _build_tree(self):
         """Construir representación jerárquica base desde model.cachered_ips"""
         # Construir mapa padre -> hijos para consultas rápidas

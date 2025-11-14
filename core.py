@@ -188,6 +188,9 @@ class Core:
                 print(f"[-] error inserting ip \n {e}")
             # should invoke this method at the commands
             self.insert_ports_from_nmap(ip,ports)
+    def filter_ip(self,ip):
+        return self.crud.select_ip_by_field('ip',ip,dao=self.crud.dao)
+    
     def insert_ports_from_nmap(self,ip,ports):
         # tested  
         for port in ports:

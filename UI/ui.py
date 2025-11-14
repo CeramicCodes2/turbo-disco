@@ -11,8 +11,8 @@ from asciimatics.screen import Screen
 
 def demo(screen,model):
     scenes = [
-        #Scene([TreeIPFrame(screen,model)], -1, name="tree_ip"),
-        Scene([IPFrame(screen,model)], -1, name="main"),
+        Scene([TreeIPFrame(screen,model)], -1, name="main"),
+        #Scene([IPFrame(screen,model)], -1, name="main"),
         Scene([SearchFrame(screen,model)], -1,name="search"),
         Scene([ProtocolFrame(screen,model)], -1, name="protocols")  # ip_index se actualiza dinámicamente
     ]

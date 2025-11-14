@@ -127,9 +127,26 @@ class UIMapper:
             # si se recibe una lista ya transformada
             self._value = data
 
-
-class GenericModel:
+class Observable:
+    """Clase base para observables"""
+    def __init__(self):
+        self._observers = []
+    
+    def attach(self, observer):
+        if observer not in self._observers:
+            self._observers.append(observer)
+    
+    def detach(self, observer):
+        if observer in self._observers:
+            self._observers.remove(observer)
+    
+    def notify(self, **kwargs):
+        for observer in self._observers:
+            observer.observerUpdate(**kwargs)
+            
+class GenericModel(Observable):
     def __init__(self, repository, commands=None, port_service_map=None):
+        super().__init__()
         self.repo = RepositoryModel(repository)
         self.cmd = CommandModel(commands)
         self.mapper = UIMapper(port_service_map=port_service_map)
@@ -138,6 +155,17 @@ class GenericModel:
         self.protocols = ["SMB", "FTP", "SSH", "HTTP", "DNS", "RDP", "Telnet", "SMTP", "POP3", "IMAP", "LDAP", "SNMP"]
         self.themes = Themes.PALETTES
         self.current_theme = 'hacker'
+        self._selected_ip = ''
+        # campo usado para comunicarse con otros frames sobre la ip seleccionada
+    @property
+    def selected_ip(self):
+        return self._selected_ip
+    
+    @selected_ip.setter
+    def selected_ip(self, value):
+        if self._selected_ip != value:
+            self._selected_ip = value
+            self.notify(selected_ip=value)
     @property
     def cachered_ips(self):
         if not self._cachered:
