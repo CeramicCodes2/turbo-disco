@@ -1,6 +1,14 @@
 import logging as log 
 
-log.basicConfig(level=log.DEBUG)# seteamos el nivel de debug por desarollo
+#log.basicConfig(level=log.DEBUG)# seteamos el nivel de debug por desarollo
+log.basicConfig(
+    level=log.DEBUG,
+    format='%(asctime)s %(levelname)s:%(message)s',
+    handlers=[
+        log.FileHandler("db_logs.log")
+    ]
+)
+    
 log.debug("INICIO RECOPILADO".center(50,"="))# mandamos mensaje a nivel debug
 # dependiendo del nivel solo se muestran niveles superiores o el nivel debug
 
