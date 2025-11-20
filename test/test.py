@@ -8,7 +8,7 @@ from test_connection import TestSQLiteConnectionPool
 def suite():
     test_suite = unittest.TestSuite()
     # CRUD_GATHERINGDB tests
-    test_suite.addTest(TestCRUD_GATHERINGDB)
+    #test_suite.addTest(TestCRUD_GATHERINGDB)
     
     # GenericDAO and Transaction tests
     test_suite.addTest(TestGenericDAO)

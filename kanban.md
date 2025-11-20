@@ -35,9 +35,11 @@ pentesting reales.
 # PROCESS
 ---
 
-* Quiero que se pueda modificar dinamicamente al pulsar + el nivel de profundidad a ir en el arbol de direcciones ip 
-
-* Quiero que se muestre en el TUI las direcciones IP hijas de una direccion ip padre 
+* Quiero que dependiendo de una direccion ip seleccionada se puedan emitir sugerencias sobre como realizar pivoting para llegar hasta esa direccion ip
+    * para emitir sugerencias quiero que estas se carguen desde un cheatsheet con un formato especifico
+    * quiero que los cheatsheets se guarden en una base de datos relacional sql para facilitar las consutlas posterior a ser ingeridos por el cheatingestor
+* Quiero poder pegar los comandos de sugerencia en mi terminal de preferencia
+* Quiero tener una terminal que directamente me proponga comandos para poder realizar pivoring 
 
 
 
@@ -52,11 +54,13 @@ datos local para consultarlas y actualizarlas fácilmente.
     * insertar
         * custom errors
         * omitir ips que ya existan
-        * 
     * resolver bug de que cache no almacena direciones ip que no se hayan cargado desde nmap
 
 * quiero que se pueda editar el nivel de profunidad a mostrar para cambiar dinamicamente entre direcciones ip hijas
 
+* Quiero que se pueda modificar dinamicamente al pulsar + el nivel de profundidad a ir en el arbol de direcciones ip 
+
+* Quiero que se muestre en el TUI las direcciones IP hijas de una direccion ip padre 
 ---
 
 * Quiero que cada dirección IP escaneada se convierta 
