@@ -34,7 +34,7 @@ class Repository(ForRepository):
                 ))
                 
         self.configurator.repository.insert_template(
-                
+                ...
         )
         self.insert_template(self.document)
 
